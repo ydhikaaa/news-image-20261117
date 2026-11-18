@@ -69,41 +69,49 @@ def letterspaced(draw, xy, text, fnt, color, spacing=4):
 
 
 def draw_bridge_scene(draw, box):
-    """A bridge over water with its middle span broken and smoking."""
+    """A bridge over water with its middle span broken and smoking.
+    All geometry is relative to the box, so it fits any panel height."""
     x0, y0, x1, y1 = box
+    bh = y1 - y0
     draw.rectangle(box, fill=SKY)
     # sun
-    draw.ellipse([x1 - 78, y0 + 14, x1 - 34, y0 + 58], fill=(240, 205, 110))
-    # distant shore
-    draw.rectangle([x0, y1 - 78, x1, y1 - 62], fill=(178, 190, 168))
-    # water
-    draw.rectangle([x0, y1 - 62, x1, y1], fill=SEA)
-    for wy in (y1 - 48, y1 - 30, y1 - 14):
-        for wx in range(x0 + 8, x1 - 40, 64):
-            draw.line([(wx, wy), (wx + 34, wy)], fill=(220, 232, 240), width=3)
-    deck_y = y1 - 108
+    draw.ellipse([x1 - 78, y0 + 10, x1 - 34, y0 + 54], fill=(240, 205, 110))
+    deck_y = y0 + int(bh * 0.60)
+    tower_h = int(bh * 0.42)
+    # distant shore, then water
+    draw.rectangle([x0, deck_y + 6, x1, deck_y + 16], fill=(178, 190, 168))
+    draw.rectangle([x0, deck_y + 16, x1, y1], fill=SEA)
+    for wy in (deck_y + 30, deck_y + 44, deck_y + 56):
+        if wy < y1 - 4:
+            for wx in range(x0 + 8, x1 - 40, 64):
+                draw.line([(wx, wy), (wx + 34, wy)], fill=(220, 232, 240), width=3)
     # towers
     for tx in (x0 + 52, x1 - 92):
-        draw.rectangle([tx, deck_y - 92, tx + 12, deck_y], fill=INK)
-        draw.rectangle([tx - 6, deck_y - 100, tx + 18, deck_y - 92], fill=INK)
+        draw.rectangle([tx, deck_y - tower_h, tx + 12, deck_y], fill=INK)
+        draw.rectangle([tx - 6, deck_y - tower_h - 8, tx + 18,
+                        deck_y - tower_h], fill=INK)
     # cables (a few, from each tower to the deck)
     for cx in range(x0 + 90, x1 - 90, 52):
-        draw.line([(x0 + 58, deck_y - 92), (cx, deck_y)], fill=(110, 110, 110), width=2)
-        draw.line([(x1 - 86, deck_y - 92), (cx, deck_y)], fill=(110, 110, 110), width=2)
+        draw.line([(x0 + 58, deck_y - tower_h), (cx, deck_y)],
+                  fill=(110, 110, 110), width=2)
+        draw.line([(x1 - 86, deck_y - tower_h), (cx, deck_y)],
+                  fill=(110, 110, 110), width=2)
     # deck: left part intact, middle span broken and tilted into the water
     draw.rectangle([x0, deck_y, x0 + 180, deck_y + 14], fill=(60, 60, 60))
     draw.rectangle([x1 - 160, deck_y, x1, deck_y + 14], fill=(60, 60, 60))
     # broken span, a narrow slab tilted down into the water
     draw.polygon([(x0 + 186, deck_y + 2), (x0 + 224, deck_y + 2),
-                  (x0 + 242, y1 - 42), (x0 + 210, y1 - 40)], fill=(90, 40, 36))
+                  (x0 + 242, y1 - 10), (x0 + 210, y1 - 8)], fill=(90, 40, 36))
     # splash where the slab meets the water
     for sx in (x0 + 208, x0 + 228, x0 + 246):
-        draw.line([(sx, y1 - 44), (sx + 10, y1 - 44)], fill=WHITE, width=2)
+        draw.line([(sx, y1 - 12), (sx + 10, y1 - 12)], fill=WHITE, width=2)
     # smoke from the break
     for i, (sx, sy, sr) in enumerate([(x0 + 222, deck_y - 22, 13),
                                       (x0 + 238, deck_y - 40, 16),
                                       (x0 + 258, deck_y - 56, 19)]):
-        draw.ellipse([sx - sr, sy - sr, sx + sr, sy + sr], fill=(120, 120, 118))
+        if sy - sr > y0:
+            draw.ellipse([sx - sr, sy - sr, sx + sr, sy + sr],
+                         fill=(120, 120, 118))
     # small explosion flash at the break
     draw.polygon([(x0 + 212, deck_y - 4), (x0 + 222, deck_y - 20),
                   (x0 + 230, deck_y - 6), (x0 + 242, deck_y - 18),
@@ -188,20 +196,20 @@ def panel(draw, box, tag, headline, body, icon=None, accent=RED):
     draw.rectangle(box, fill=WHITE, outline=LINE, width=2)
     draw.rectangle([x0, y0, x1, y0 + 6], fill=accent)
     cx = x0 + 16
-    cy = y0 + 14
+    cy = y0 + 12
     if icon is not None:
         # Draw the icon on a small canvas, then shrink it to a uniform strip.
         tmp = Image.new("RGB", (130, 70), WHITE)
         d2 = ImageDraw.Draw(tmp)
         icon(d2, 5, 5)
-        tmp = tmp.resize((84, 45), Image.LANCZOS)
+        tmp = tmp.resize((84, 42), Image.LANCZOS)
         img.paste(tmp, (cx, cy))
-        cy += 48
+        cy += 42
     draw.text((cx, cy), tag, font=F_SANS_B(14), fill=accent)
-    cy += 19
-    cy = para(draw, (cx, cy), headline, F_SANS_B(23), INK, x1 - x0 - 32, 25)
-    para(draw, (cx, cy + 3), body, F_SANS(16), (52, 52, 52),
-         x1 - x0 - 32, 18)
+    cy += 18
+    cy = para(draw, (cx, cy), headline, F_SANS_B(23), INK, x1 - x0 - 32, 24)
+    para(draw, (cx, cy + 3), body, F_SANS(15), (52, 52, 52),
+         x1 - x0 - 32, 17)
 
 
 def main():
@@ -210,41 +218,41 @@ def main():
     draw = ImageDraw.Draw(img)
 
     # ---- Masthead ----
-    draw.rectangle([0, 0, W, 140], fill=NAVY)
-    letterspaced(draw, (28, 14), "THE WORLD IN ONE DAY", F_SANS_B(24),
+    draw.rectangle([0, 0, W, 136], fill=NAVY)
+    letterspaced(draw, (28, 12), "THE WORLD IN ONE DAY", F_SANS_B(23),
                  (200, 210, 230), spacing=6)
-    date_size = 56
+    date_size = 54
     while (draw.textlength("TUESDAY 17 NOVEMBER 2026",
                            font=F_SERIF_B(date_size)) > W - 56
            and date_size > 30):
         date_size -= 1
-    draw.text((28, 44), "TUESDAY 17 NOVEMBER 2026", font=F_SERIF_B(date_size),
+    draw.text((28, 40), "TUESDAY 17 NOVEMBER 2026", font=F_SERIF_B(date_size),
               fill=WHITE)
-    draw.text((28, 110), "One day. One picture. The news the world woke up to.",
+    draw.text((28, 104), "One day. One picture. The news the world woke up to.",
               font=F_SANS_OB(18), fill=(180, 195, 220))
-    draw.rectangle([0, 140, W, 146], fill=GOLD)
+    draw.rectangle([0, 136, W, 142], fill=GOLD)
 
     # ---- Lead story: bridges ----
-    lx0, ly0, lx1, ly1 = 28, 158, 996, 420
+    lx0, ly0, lx1, ly1 = 24, 152, 1000, 384
     draw.rectangle([lx0, ly0, lx1, ly1], fill=WHITE, outline=LINE, width=2)
     draw.rectangle([lx0, ly0, lx1, ly0 + 6], fill=RED)
-    draw_bridge_scene(draw, (lx0 + 16, ly0 + 52, lx0 + 430, ly1 - 36))
+    draw_bridge_scene(draw, (lx0 + 16, ly0 + 48, lx0 + 430, ly1 - 32))
     tx = lx0 + 452
-    draw.text((tx, ly0 + 20), "EUROPE  •  WAR IN UKRAINE", font=F_SANS_B(16),
+    draw.text((tx, ly0 + 18), "EUROPE  •  WAR IN UKRAINE", font=F_SANS_B(16),
               fill=RED)
-    y = para(draw, (tx, ly0 + 48), "BRIDGES FALL AS THE WAR ESCALATES",
-             F_SANS_B(40), INK, lx1 - tx - 18, 46)
-    para(draw, (tx, y + 10),
+    y = para(draw, (tx, ly0 + 40), "BRIDGES FALL AS THE WAR ESCALATES",
+             F_SANS_B(38), INK, lx1 - tx - 18, 42)
+    para(draw, (tx, y + 6),
          "Ukraine strikes the Kerch Bridge to Crimea for a second day — "
          "a road span collapses. Russian missiles hit Kyiv's bridges over "
          "the Dnipro, cutting heat, water and power.",
-         F_SANS(21), (52, 52, 52), lx1 - tx - 18, 27)
-    draw.text((lx0 + 16, ly1 - 28), "Kerch Bridge, Crimea — struck twice in 24 hours",
+         F_SANS(18), (52, 52, 52), lx1 - tx - 18, 22)
+    draw.text((lx0 + 16, ly1 - 26), "Kerch Bridge, Crimea — struck twice in 24 hours",
               font=F_SANS_OB(15), fill=GREY)
 
     # ---- Row 2 ----
     gap, pw = 12, 312
-    y0, y1 = 428, 636
+    y0, y1 = 396, 584
     boxes = [(24 + i * (pw + gap), y0, 24 + (i + 1) * pw + i * gap, y1)
              for i in range(3)]
     panel(draw, boxes[0], "MIDDLE EAST  •  HORMUZ",
@@ -264,7 +272,7 @@ def main():
           icon=icon_carrier, accent=NAVY2)
 
     # ---- Row 3 ----
-    y0, y1 = 648, 842
+    y0, y1 = 596, 776
     boxes = [(24 + i * (pw + gap), y0, 24 + (i + 1) * pw + i * gap, y1)
              for i in range(3)]
     panel(draw, boxes[0], "UNITED STATES  •  DEFENCE",
@@ -284,7 +292,7 @@ def main():
           icon=icon_rocket, accent=NAVY2)
 
     # ---- Also today strip ----
-    sx0, sy0, sx1, sy1 = 24, 856, 1000, 950
+    sx0, sy0, sx1, sy1 = 24, 788, 1000, 872
     draw.rectangle([sx0, sy0, sx1, sy1], fill=(232, 226, 210),
                    outline=LINE, width=2)
     draw.text((sx0 + 16, sy0 + 8), "ALSO ON 17 NOVEMBER",
@@ -297,10 +305,23 @@ def main():
          "sanctions eight firms building West Bank settlements",
          F_SANS(16), INK, sx1 - sx0 - 32, 19)
 
+    # ---- Around the world in brief ----
+    sx0, sy0, sx1, sy1 = 24, 884, 1000, 966
+    draw.rectangle([sx0, sy0, sx1, sy1], fill=WHITE,
+                   outline=LINE, width=2)
+    draw.text((sx0 + 16, sy0 + 8), "AROUND THE WORLD IN BRIEF",
+              font=F_SANS_B(15), fill=NAVY2)
+    para(draw, (sx0 + 16, sy0 + 30),
+         "U.S. officials tell CNN Iran is weighing a “dirty bomb” attack "
+         "in Washington  •  Trump lands in Manila for ASEAN  •  "
+         "128 states meet in Geneva on killer robots  •  "
+         "Xi and Carney agree tariff cuts",
+         F_SANS(16), INK, sx1 - sx0 - 32, 19)
+
     # ---- Footer ----
-    draw.text((24, 962), "The world news of Tuesday 17 November 2026, as reported that day.",
+    draw.text((24, 976), "The world news of Tuesday 17 November 2026, as reported that day.",
               font=F_SANS_OB(15), fill=GREY)
-    draw.text((700, 962), "make.fun  •  news-image-20261117",
+    draw.text((700, 976), "make.fun  •  news-image-20261117",
               font=F_SANS(15), fill=GREY)
 
     out = os.path.join(HERE, "entry.png")
