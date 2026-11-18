@@ -1,13 +1,16 @@
 """Entry program for make.fun news-image-20261117 (Python 3.13, stdlib only).
 
 The entry image is the entry.png beside this file: a front page drawn for
-Tuesday 17 November 2026. The program copies it, byte for byte, to the
-output directory the grader provides, so both runs write identical bytes.
+Tuesday 17 November 2026 by frontpage.py (the second edition: seventeen
+stories, eight of them illustrated, with a map and the day in figures).
+The program copies it, byte for byte, to the output directory the grader
+provides, so both runs write identical bytes.
 
 Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
     mkdir -p out && MAKEFUN_OUTPUT_DIR=out python3 main.py
 """
 
+import hashlib
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -35,7 +38,9 @@ def main():
     dst = os.path.join(out_dir, "entry.png")
     with open(dst, "wb") as fh:
         fh.write(data)
-    print("wrote", dst, len(data), "bytes", f"({width}x{height})")
+    digest = hashlib.sha256(data).hexdigest()
+    print("wrote", dst, len(data), "bytes", f"({width}x{height})",
+          "sha256", digest)
 
 
 if __name__ == "__main__":
